@@ -78,8 +78,9 @@ To remove PCR duplicates generated during library amplification, use `deduplicat
 
 ```bash
 for bam in *_pe.bam; do
-  deduplicate_bismark --bam --paired "$bam"
+  deduplicate_bismark --bam --paired "$bam" &
 done
+wait
 ```
 ## 6. Methylation Extraction
 
@@ -93,7 +94,8 @@ mkdir -p methylation_output
 for bam in *_pe.deduplicated.bam; do
   bismark_methylation_extractor --paired-end --comprehensive --bedGraph \
         --output_dir methylation_output \
-        "$bam"
+        "$bam" &
 done
+wait
 ```
 scp seg2user@158.42.124.228:/remote/path/file.ext .
