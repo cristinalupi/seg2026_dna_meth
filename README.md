@@ -5,10 +5,10 @@
 
 The raw sequencing data for the *Danio rerio* (zebrafish) samples comprise paired-end reads across two developmental stages (4hpf and 36hpf) with two biological replicates each. The raw data can be retrieved from the NCBI SRA database using the following accessions:
 
-* [SRX5027445](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027445) (4hpf, rep 1)
-* [SRX5027437](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027437) (4hpf, rep 2)
-* [SRX5027442](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027442) (36hpf, rep 1)
-* [SRX5027434](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027434) (36hpf, rep 2)
+* [SRX5027434](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027434) (4hpf, rep 1)
+* [SRX5027442](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027442) (4hpf, rep 2)
+* [SRX5027437](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027437) (36hpf, rep 1)
+* [SRX5027445](https://www.ncbi.nlm.nih.gov/sra?term=SRX5027445) (36hpf, rep 2)
 
 Library preparation was performed using the Accel-NGS Methyl-Seq DNA Library Kit (Swift Biosciences).
 
