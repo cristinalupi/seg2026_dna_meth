@@ -68,7 +68,7 @@ mkdir -p genome_dir
 Combine the zebrafish reference genome with the lambda sequence and save the resulting reference genome in the Bismark genome directory.
 
 ```bash
-cat input_data/GRCz11.fa input_data/lambda.fa > genome_dir/GRCz11_lambda.fa
+cat input_data/GRCz11.fa input_data/lambda.fasta > genome_dir/GRCz11_lambda.fa
 ```
 
 ### 3.3. Prepare the genome for bisulfite alignment
@@ -97,13 +97,10 @@ for fwd in fastq_trimmed/*_R1_trimmed.fastq.gz; do
         -1 "$fwd" \
         -2 "$rev" \
         --output_dir bismark_aligned \
-        --parallel 8 \
+        --parallel 4 \
         --bowtie2 \
         --local \
         -X 2000
-
-    mv "bismark_aligned/${base}_R1_trimmed_bismark_bt2.bam" \
-       "bismark_aligned/${base}_bismark_bt2.bam"
 done
 ```
 Parameters:
@@ -131,12 +128,37 @@ wait
 ```
 ## 6. Methylation Extraction
 - [MethylDackel Documentation](https://github.com/dpryan79/methyldackel)
-### 6.1 M-bias Analysis
+### 6.1 Sort bam file
+```bash
+mkdir -p bismark_deduplicated/sorted
+
+for bam in bismark_deduplicated/*_pe.deduplicated.bam; do
+    base=$(basename "$bam" .bam)
+
+    samtools sort \
+        -o "bismark_deduplicated/sorted/${base}.sorted.bam" \
+        "$bam" &
+done
+wait
+```
+### 6.2 Index sorted bam files
+```bash
+for bam in bismark_deduplicated/sorted/*.sorted.bam; do
+    samtools index "$bam" &
+done
+wait
+```
+### 6.3 Index genome file
+```bash
+samtools faidx genome_dir/GRCz11_lambda.fa
+```
+
+### 6.4 M-bias Analysis
 
 ```bash
 mkdir -p methylation_bias
 
-for bam in bismark_deduplicated/*_pe.deduplicated.bam; do
+for bam in bismark_deduplicated/sorted/*_pe.deduplicated.sorted.bam; do
     prefix=$(basename "$bam" .bam)
 
     MethylDackel mbias \
@@ -147,17 +169,17 @@ for bam in bismark_deduplicated/*_pe.deduplicated.bam; do
 done
 
 ```
-### 6.2. Define M-bias filtering parameters
+### 6.5 Define M-bias filtering parameters
 ```bash
 declare -A MBIAS=(
-    [danio_4hpf_rep1]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
-    [danio_4hpf_rep2]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
-    [danio_36hpf_rep1]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
-    [danio_36hpf_rep2]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
+    [danio_4hpf_rep1]="--OT 0,0,0,0 --OB 0,0,0,0"
+    [danio_4hpf_rep2]="--OT 0,0,0,0 --OB 0,0,0,0"
+    [danio_36hpf_rep1]="--OT 0,0,0,0 --OB 0,0,0,0"
+    [danio_36hpf_rep2]="--OT 0,0,0,0 --OB 0,0,0,0"
 )
 ```
 
-### 6.3. Extract methylation information
+### 6.6 Extract methylation information
 
 ```bash
 mkdir -p methylation_output
@@ -165,7 +187,7 @@ mkdir -p methylation_output
 for sample in danio_4hpf_rep1 danio_4hpf_rep2 danio_36hpf_rep1 danio_36hpf_rep2; do
     MethylDackel extract \
         genome_dir/GRCz11_lambda.fa \
-        bismark_deduplicated/${sample}_pe.deduplicated.bam \
+        bismark_deduplicated/sorted/${sample}_R1_trimmed_bismark_bt2_pe.deduplicated.sorted.bam \
         --minOppositeDepth 10 \
         --maxVariantFrac 0.5 \
         ${MBIAS[$sample]} \
@@ -178,7 +200,7 @@ done
 Parameters:
 * `--minOppositeDepth 10`: requires a minimum of 10 reads covering the opposite strand.
 * `--maxVariantFrac 0.5`: excludes positions where more than 50% of the reads support a non-reference base, helping to remove potential genetic variants.
-* `--OT`, `--OB`, `--CTOT`, and `--CTOB`: specify the positions to exclude from each read according to the M-bias analysis. The values are sample-specific and should be filled in using the results obtained from the M-bias plots.
+* `--OT`, `--OB`: specify the positions to exclude from each read according to the M-bias analysis. The values are sample-specific and should be filled in using the results obtained from the M-bias plots.
 * `--mergeContext`: merges methylation calls from both strands at CpG sites.
 * `-p 8`: uses 8 threads for the extraction.
 * `-o`: specifies the output prefix for each sample.
