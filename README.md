@@ -12,6 +12,24 @@ The raw sequencing data for the *Danio rerio* (zebrafish) samples comprise paire
 
 Library preparation was performed using the Accel-NGS Methyl-Seq DNA Library Kit (Swift Biosciences).
 
+```text
+/data/classes/seg_epig2026/data/methylation_data/
+├── danio_36hpf_rep1_R1.fastq.gz
+├── danio_36hpf_rep1_R2.fastq.gz
+├── danio_36hpf_rep2_R1.fastq.gz
+├── danio_36hpf_rep2_R2.fastq.gz
+├── danio_4hpf_rep1_R1.fastq.gz
+├── danio_4hpf_rep1_R2.fastq.gz
+├── danio_4hpf_rep2_R1.fastq.gz
+├── danio_4hpf_rep2_R2.fastq.gz
+├── GRCz11.fa
+└── lambda.fa
+```
+### 1.1. Create a Symbolic Link to the Input Data
+```bash
+mkdir -p methylation_analysis/input_data
+ln -s /data/classes/seg_epig2026/data/methylation_data/* methylation_analysis/input_data/
+```
 ---
 
 ## 2. Quality Control & Hard Trimming
@@ -19,83 +37,197 @@ Library preparation was performed using the Accel-NGS Methyl-Seq DNA Library Kit
 * **Quality Control:** General quality trimming has already been performed. 
 * **Hard Trimming:** Focuses exclusively on library-specific requirements to eliminate sequencing artifacts and bisulfite conversion biases from read extremities.
 
-### Execution
-
 ```bash
 mkdir -p fastq_trimmed
 
 for sample in danio_36hpf_rep1 danio_36hpf_rep2 danio_4hpf_rep1 danio_4hpf_rep2; do
-  fastp -i ${sample}_R1.fastq.gz \
-        -I ${sample}_R2.fastq.gz \
-        -o fastq_trimmed/trimmed_${sample}_R1.fastq.gz \
-        -O fastq_trimmed/trimmed_${sample}_R2.fastq.gz \
+  fastp -i input_data/${sample}_R1.fastq.gz \
+        -I input_data/${sample}_R2.fastq.gz \
+        -o fastq_trimmed/${sample}_R1_trimmed.fastq.gz \
+        -O fastq_trimmed/${sample}_R2_trimmed.fastq.gz \
         --trim_front1 10 \
         --trim_front2 15 \
         --trim_tail1 10 \
-        --trim_tail2 10 \
-        -w 12
+        --trim_tail2 10
 done
 ```
-### Procedure
-
-1. **Output Directory Creation:** Creates the `fastq_trimmed/` directory if it does not already exist.
-2. **Batch Iteration:** Loops through each of the four biological replicates (`danio_36hpf_rep1`, `danio_36hpf_rep2`, `danio_4hpf_rep1`, `danio_4hpf_rep2`).
-3. **Hard Trimming Execution:** Applies `fastp` with 12 parallel threads to remove the library-specific fixed bases at the 5' and 3' extremities (`--trim_front1 10`, `--trim_front2 15`, `--trim_tail1 10`, `--trim_tail2 10`), saving the output files to the target directory.
-
+- [Bismark Library Type Documentation](https://felixkrueger.github.io/Bismark/usage/library-types/)
+- [fastp Documentation](https://github.com/opengene/fastp)
 ## 3. Genome Preparation
 
-Before mapping bisulfite-seq reads, the reference genome (`GRCz11.fa`) must be prepared using Bismark to generate two copies of the genome with converted cytosines (C-to-T and G-to-A).
+### 3.1. Create the Bismark genome directory
 
-For detailed usage, refer to the [Bismark Genome Preparation Documentation](https://felixkrueger.github.io/Bismark/usage/genome-preparation/).
+Create the directory required by Bismark.
 
-### Execution
+```bash
+mkdir -p genome_dir
+```
 
+### 3.2. Combine the reference genomes
+
+Combine the zebrafish reference genome with the lambda sequence and save the resulting reference genome in the Bismark genome directory.
+
+```bash
+cat input_data/GRCz11.fa input_data/lambda.fa > genome_dir/GRCz11_lambda.fa
+```
+
+### 3.3. Prepare the genome for bisulfite alignment
+
+Prepare the reference genome and generate the required bisulfite-converted genomes.
+- [Bismark Genome Preparation Documentation](https://felixkrueger.github.io/Bismark/usage/genome-preparation/)
 ```bash
 bismark_genome_preparation genome_dir/
 ```
+
+
 ## 4. Alignment
 
 Once the genome is prepared and the reads are trimmed, the next step is to align the paired-end WGBS reads against the bisulfite-converted reference genome using `bismark` in a loop over the trimmed files.
-
-### Script Execution
+- [Bismark Alignment Documentation](https://felixkrueger.github.io/Bismark/usage/alignment/) 
 
 ```bash
 mkdir -p bismark_aligned
 
-for sample in danio_36hpf_rep1 danio_36hpf_rep2 danio_4hpf_rep1 danio_4hpf_rep2; do
-  bismark --genome genome_dir/ \
-        -1 fastq_WGBS/fastq_trimmed/trimmed_${sample}_R1.fastq.gz \
-        -2 fastq_WGBS/fastq_trimmed/trimmed_${sample}_R2.fastq.gz \
+for fwd in fastq_trimmed/*_R1_trimmed.fastq.gz; do
+    rev="${fwd/_R1_trimmed.fastq.gz/_R2_trimmed.fastq.gz}"
+    base=$(basename "$fwd" "_R1_trimmed.fastq.gz")
+
+    bismark \
+        --genome genome_dir/ \
+        -1 "$fwd" \
+        -2 "$rev" \
+        --output_dir bismark_aligned \
         --parallel 8 \
-        --output_dir bismark_aligned
+        --bowtie2 \
+        --local \
+        -X 2000
+
+    mv "bismark_aligned/${base}_R1_trimmed_bismark_bt2.bam" \
+       "bismark_aligned/${base}_bismark_bt2.bam"
 done
 ```
+Parameters:
+- `--bowtie2`: uses Bowtie 2 for read alignment.
+- `--local`: performs local alignment, allowing reads to align without requiring the entire read to match the reference.
+- `-X 2000`: sets the maximum allowed insert size for paired-end reads to 2000 bp.
+- `--parallel 4`: runs four parallel alignment processes.
+- `--output_dir`: specifies the directory where Bismark output files are saved.
+
 ## 5. Deduplication
-
-To remove PCR duplicates generated during library amplification, use `deduplicate_bismark` on the paired-end alignment files.
-
-### Script Execution
+- [Bismark Library Type Documentation](https://felixkrueger.github.io/Bismark/usage/library-types/)
+- [Bismark Deduplication Documentation](https://felixkrueger.github.io/Bismark/usage/deduplication/)
 
 ```bash
-for bam in *_pe.bam; do
-  deduplicate_bismark --bam --paired "$bam" &
-done
-wait
-```
-## 6. Methylation Extraction
+mkdir -p bismark_deduplicated
 
-After deduplication, the methylation state of each cytosine is extracted using `bismark_methylation_extractor`.
-
-### Script Execution
-
-```bash
-mkdir -p methylation_output
-
-for bam in *_pe.deduplicated.bam; do
-  bismark_methylation_extractor --paired-end --comprehensive --bedGraph \
-        --output_dir methylation_output \
+for bam in bismark_aligned/*_pe.bam; do
+    deduplicate_bismark \
+        --bam \
+        --paired \
+        --output_dir bismark_deduplicated \
         "$bam" &
 done
 wait
 ```
-scp seg2user@158.42.124.228:/remote/path/file.ext .
+## 6. Methylation Extraction
+- [MethylDackel Documentation](https://github.com/dpryan79/methyldackel)
+### 6.1 M-bias Analysis
+
+```bash
+mkdir -p methylation_bias
+
+for bam in bismark_deduplicated/*_pe.deduplicated.bam; do
+    prefix=$(basename "$bam" .bam)
+
+    MethylDackel mbias \
+        -@ 8 \
+        genome_dir/GRCz11_lambda.fa \
+        "$bam" \
+        methylation_bias/"$prefix"
+done
+
+```
+### 6.2. Define M-bias filtering parameters
+```bash
+declare -A MBIAS=(
+    [danio_4hpf_rep1]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
+    [danio_4hpf_rep2]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
+    [danio_36hpf_rep1]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
+    [danio_36hpf_rep2]="--OT [OT] --OB [OB] --CTOT [CTOT] --CTOB [CTOB]"
+)
+```
+
+### 6.3. Extract methylation information
+
+```bash
+mkdir -p methylation_output
+
+for sample in danio_4hpf_rep1 danio_4hpf_rep2 danio_36hpf_rep1 danio_36hpf_rep2; do
+    MethylDackel extract \
+        genome_dir/GRCz11_lambda.fa \
+        bismark_deduplicated/${sample}_pe.deduplicated.bam \
+        --minOppositeDepth 10 \
+        --maxVariantFrac 0.5 \
+        ${MBIAS[$sample]} \
+        --mergeContext \
+        -p 8 \
+        -o methylation_output/${sample}
+done
+```
+
+Parameters:
+* `--minOppositeDepth 10`: requires a minimum of 10 reads covering the opposite strand.
+* `--maxVariantFrac 0.5`: excludes positions where more than 50% of the reads support a non-reference base, helping to remove potential genetic variants.
+* `--OT`, `--OB`, `--CTOT`, and `--CTOB`: specify the positions to exclude from each read according to the M-bias analysis. The values are sample-specific and should be filled in using the results obtained from the M-bias plots.
+* `--mergeContext`: merges methylation calls from both strands at CpG sites.
+* `-p 8`: uses 8 threads for the extraction.
+* `-o`: specifies the output prefix for each sample.
+
+## 7. Generate DSS files
+The MethylDackel methylation output is converted into the format required by DSS for downstream differential methylation analysis.
+- [DSS documentation](https://www.bioconductor.org/packages/release/bioc/vignettes/DSS/inst/doc/DSS.html#3_Using_DSS_for_BS-seq_differential_methylation_analysis)
+**Input:** MethylDackel `*.bedGraph` files containing the following information:
+
+| Column | Description |
+|---|---|
+| `chr` | Chromosome |
+| `start` | Start coordinate |
+| `end` | End coordinate |
+| `methylation` | Methylation percentage |
+| `methylated` | Number of methylated reads |
+| `unmethylated` | Number of unmethylated reads |
+
+**Transformation:** For each CpG:
+
+- `N` = methylated reads + unmethylated reads
+- `X` = methylated reads
+
+**Output:** One DSS-formatted file per sample:
+
+| Column | Description |
+|---|---|
+| `chr` | Chromosome |
+| `pos` | Genomic position |
+| `N` | Total number of reads |
+| `X` | Number of methylated reads |
+
+```bash
+mkdir -p DSS
+
+for sample in danio_4hpf_rep1 danio_4hpf_rep2 danio_36hpf_rep1 danio_36hpf_rep2; do
+    awk 'BEGIN{OFS="\t"; print "chr","pos","N","X"}
+    NR>1 {
+        chr=$1
+        pos=$2+1
+        N=$5+$6
+        X=$5
+        print chr,pos,N,X
+    }' methylation_output/${sample}*.bedGraph > DSS/${sample}.DSS.txt
+done
+```
+
+
+
+
+
+
