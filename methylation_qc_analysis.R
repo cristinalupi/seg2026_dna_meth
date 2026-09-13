@@ -1,17 +1,8 @@
 ################################################################################
-# Folder structure
-################################################################################
-# meth_analysis/
-#    ├── danio_4hpf_rep1.DSS.txt
-#    ├── danio_4hpf_rep2.DSS.txt
-#    ├── danio_36hpf_rep1.DSS.txt
-#    └── danio_36hpf_rep2.DSS.txt
-
-################################################################################
 # 0. Set working directory
 ################################################################################
 
-setwd("~/seg_epigenomics_meth/seg_data/methylation_analysis/DSS")
+setwd("/path/methylation_analysis/rstudio_analysis")
 
 ################################################################################
 # 1. Install required packages
@@ -51,10 +42,10 @@ library(ggplot2)
 # 3. Read in methylation data
 ################################################################################
 
-dat1.1 <- read.table("danio_4hpf_rep1.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat1.2 <- read.table("danio_4hpf_rep2.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat2.1 <- read.table("danio_36hpf_rep1.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat2.2 <- read.table("danio_36hpf_rep2.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat1.1 <- read.table("danio_4hpf_rep1_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat1.2 <- read.table("danio_4hpf_rep2_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat2.1 <- read.table("danio_36hpf_rep1_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat2.2 <- read.table("danio_36hpf_rep2_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
 
 
 unique(dat1.1$chr)
@@ -96,68 +87,12 @@ mt_conversion
 # 6. Create methylKit objects
 ################################################################################
 
-meth1 <- dat1.1 %>%
-  mutate(
-    chrBase = paste(chr, pos, sep="."),
-    base = pos,
-    strand = "+",
-    coverage = N,
-    freqC = 100 * X / N,
-    freqT = 100 * (N - X) / N
-  ) %>%
-  select(chrBase, chr, base, strand, coverage, freqC, freqT)
-
-meth2 <- dat1.2 %>%
-  mutate(
-    chrBase = paste(chr, pos, sep="."),
-    base = pos,
-    strand = "+",
-    coverage = N,
-    freqC = 100 * X / N,
-    freqT = 100 * (N - X) / N
-  ) %>%
-  select(chrBase, chr, base, strand, coverage, freqC, freqT)
-
-meth3 <- dat2.1 %>%
-  mutate(
-    chrBase = paste(chr, pos, sep="."),
-    base = pos,
-    strand = "+",
-    coverage = N,
-    freqC = 100 * X / N,
-    freqT = 100 * (N - X) / N
-  ) %>%
-  select(chrBase, chr, base, strand, coverage, freqC, freqT)
-
-meth4 <- dat2.2 %>%
-  mutate(
-    chrBase = paste(chr, pos, sep="."),
-    base = pos,
-    strand = "+",
-    coverage = N,
-    freqC = 100 * X / N,
-    freqT = 100 * (N - X) / N
-  ) %>%
-  select(chrBase, chr, base, strand, coverage, freqC, freqT)
-
-write.table(meth1, "danio_4hpf_rep1.methylKit.txt",
-            sep="\t", quote=FALSE, row.names=FALSE)
-
-write.table(meth2, "danio_4hpf_rep2.methylKit.txt",
-            sep="\t", quote=FALSE, row.names=FALSE)
-
-write.table(meth3, "danio_36hpf_rep1.methylKit.txt",
-            sep="\t", quote=FALSE, row.names=FALSE)
-
-write.table(meth4, "danio_36hpf_rep2.methylKit.txt",
-            sep="\t", quote=FALSE, row.names=FALSE)
-
 myobj <- methRead(
   list(
-    "danio_4hpf_rep1.methylKit.txt",
-    "danio_4hpf_rep2.methylKit.txt",
-    "danio_36hpf_rep1.methylKit.txt",
-    "danio_36hpf_rep2.methylKit.txt"
+    "danio_4hpf_rep1_methylKit.txt",
+    "danio_4hpf_rep2_methylKit.txt",
+    "danio_36hpf_rep1_methylKit.txt",
+    "danio_36hpf_rep2_methylKit.txt"
   ),
   sample.id = list(
     "4hpf_rep1",
