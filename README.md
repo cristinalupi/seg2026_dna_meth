@@ -208,6 +208,8 @@ Parameters:
 ## 7. Generate DSS files
 The MethylDackel methylation output is converted into the format required by DSS for downstream differential methylation analysis.
 - [DSS documentation](https://www.bioconductor.org/packages/release/bioc/vignettes/DSS/inst/doc/DSS.html#3_Using_DSS_for_BS-seq_differential_methylation_analysis)
+### DSS and methylKit input preparation
+
 **Input:** MethylDackel `*.bedGraph` files containing the following information:
 
 | Column | Description |
@@ -219,7 +221,11 @@ The MethylDackel methylation output is converted into the format required by DSS
 | `methylated` | Number of methylated reads |
 | `unmethylated` | Number of unmethylated reads |
 
-**Transformation:** For each CpG:
+The same MethylDackel `*.bedGraph` files are used as input for both **DSS** and **methylKit**. The files are converted into the respective formats required by each downstream analysis.
+
+#### DSS format
+
+**Transformation:**
 
 - `N` = methylated reads + unmethylated reads
 - `X` = methylated reads
@@ -233,20 +239,71 @@ The MethylDackel methylation output is converted into the format required by DSS
 | `N` | Total number of reads |
 | `X` | Number of methylated reads |
 
+#### methylKit format
+
+**Transformation:**
+
+- `chrBase` = chromosome + `"."` + genomic position
+- `chr` = chromosome
+- `base` = genomic position
+- `strand` = `"+"`
+- `coverage` = methylated reads + unmethylated reads
+- `freqC` = 100 × methylated reads / coverage
+- `freqT` = 100 × unmethylated reads / coverage
+
+**Output:** One methylKit-formatted file per sample:
+
+| Column | Description |
+|---|---|
+| `chrBase` | Unique chromosome-position identifier |
+| `chr` | Chromosome |
+| `base` | Genomic position |
+| `strand` | Strand, set to `+` |
+| `coverage` | Total number of reads |
+| `freqC` | Percentage of methylated reads |
+| `freqT` | Percentage of unmethylated reads |
+
 ```bash
-mkdir -p DSS
+mkdir -p rstudio_analysis
 
 for sample in danio_4hpf_rep1 danio_4hpf_rep2 danio_36hpf_rep1 danio_36hpf_rep2; do
-    awk 'BEGIN{OFS="\t"; print "chr","pos","N","X"}
-    NR>1 {
+
+    input="methylation_output/${sample}_CpG.bedGraph"
+
+    # methylKit
+    awk 'BEGIN {
+        OFS="\t";
+        print "chrBase","chr","base","strand","coverage","freqC","freqT"
+    }
+    /^track/ {next}
+    {
         chr=$1
-        pos=$2+1
+        pos=$2
         N=$5+$6
         X=$5
-        print chr,pos,N,X
-    }' methylation_output/${sample}*.bedGraph > DSS/${sample}.DSS.txt
+
+        print chr "." pos, chr, pos, "+", N, 100*X/N, 100*(N-X)/N
+    }' "$input" > "rstudio_analysis/${sample}_methylKit.txt"
+
+
+    # DSS
+    awk 'BEGIN {
+        OFS="\t";
+        print "chr","pos","N","X"
+    }
+    /^track/ {next}
+    {
+        chr=$1
+        pos=$2
+        N=$5+$6
+        X=$5
+
+        print chr, pos, N, X
+    }' "$input" > "rstudio_analysis/${sample}_DSS.txt"
+
 done
 ```
+
 
 
 
