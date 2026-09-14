@@ -28,7 +28,7 @@ Library preparation was performed using the Accel-NGS Methyl-Seq DNA Library Kit
 ### 1.1. Create a Symbolic Link to the Input Data
 ```bash
 mkdir -p methylation_analysis/input_data
-ln -s /data/classes/seg_epig2026/data/methylation_data/* methylation_analysis/input_data/
+ln -s /data/classes/seg_epig2026/data/meth/methylation_analysis/* methylation_analysis/input_data/
 ```
 ---
 
