@@ -1,6 +1,6 @@
 # seg2026_dna_meth
-
-
+Reference paper:
+https://www.nature.com/articles/s41467-019-10895-6
 ## 1. File Organization & Dataset
 
 The raw sequencing data for the *Danio rerio* (zebrafish) samples comprise paired-end reads across two developmental stages (4hpf and 36hpf) with two biological replicates each. The raw data can be retrieved from the NCBI SRA database using the following accessions:
