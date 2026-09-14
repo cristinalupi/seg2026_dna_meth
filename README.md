@@ -187,7 +187,7 @@ mkdir -p methylation_output
 for sample in danio_4hpf_rep1 danio_4hpf_rep2 danio_36hpf_rep1 danio_36hpf_rep2; do
     MethylDackel extract \
         genome_dir/GRCz11_lambda.fa \
-        bismark_deduplicated/sorted/${sample}_R1_bismark_bt2_pe.deduplicated.sorted.bam \
+        bismark_deduplicated/sorted/${sample}_R1_trimmed_bismark_bt2_pe.deduplicated.sorted.bam \
         --minOppositeDepth 10 \
         --maxVariantFrac 0.5 \
         ${MBIAS[$sample]} \
