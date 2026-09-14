@@ -23,7 +23,7 @@ Library preparation was performed using the Accel-NGS Methyl-Seq DNA Library Kit
 ├── danio_4hpf_rep2_R1.fastq.gz
 ├── danio_4hpf_rep2_R2.fastq.gz
 ├── GRCz11.fa
-└── lambda.fa
+└── lambda.fasta
 ```
 ### 1.1. Create a Symbolic Link to the Input Data
 ```bash
