@@ -308,8 +308,8 @@ Options to download the data:
 ```bash
 scp -r seg2user@158.42.124.228:/data/classes/seg_epig2026/data/meth/methylation_analysis .
 ```
-Google drive: 
-- https://drive.google.com/drive/folders/1WuwiPcbwqhKIXq_cuQ_UVjZZJr81HzGs?usp=drive_link
+- Google drive: 
+https://drive.google.com/drive/folders/1WuwiPcbwqhKIXq_cuQ_UVjZZJr81HzGs?usp=drive_link
 
 
 
