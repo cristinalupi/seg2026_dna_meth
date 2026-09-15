@@ -1,11 +1,3 @@
-################################################################################
-# Folder structure
-################################################################################
-# meth_analysis/
-#    ├── danio_4hpf_rep1_met_extract_CpG.DSS.txt
-#    ├── danio_4hpf_rep2_met_extract_CpG.DSS.txt
-#    ├── danio_36hpf_rep1_met_extract_CpG.DSS.txt
-#    └── danio_36hpf_rep2_met_extract_CpG.DSS.txt
 
 ################################################################################
 # 0. Set working directory
