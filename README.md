@@ -304,7 +304,7 @@ for sample in danio_4hpf_rep1 danio_4hpf_rep2 danio_36hpf_rep1 danio_36hpf_rep2;
 done
 ```
 Options to download the data: 
-- Command line:
+- Command line (you have to open a new terminal):
 ```bash
 scp -r seg2user@158.42.124.228:/data/classes/seg_epig2026/data/meth/methylation_analysis .
 ```
