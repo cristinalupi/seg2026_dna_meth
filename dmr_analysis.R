@@ -43,10 +43,10 @@ library(ggplot2)
 # 3. Read in methylation data
 ################################################################################
 
-dat1.1 <- read.table("danio_4hpf_rep1.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat1.2 <- read.table("danio_4hpf_rep2.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat2.1 <- read.table("danio_36hpf_rep1.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat2.2 <- read.table("danio_36hpf_rep2.DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat1.1 <- read.table("danio_4hpf_rep1_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat1.2 <- read.table("danio_4hpf_rep2_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat2.1 <- read.table("danio_36hpf_rep1_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat2.2 <- read.table("danio_36hpf_rep2_DSS.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
 
 ################################################################################
 # 4. Create the BSseq object
