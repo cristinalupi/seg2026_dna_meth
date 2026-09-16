@@ -1,6 +1,6 @@
 # seg2026_dna_meth
 clupalm@upo.es
-Reference paper:
+- Reference paper:
 https://www.nature.com/articles/s41467-019-10895-6
 ## 1. File Organization & Dataset
 
